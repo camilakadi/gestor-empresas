@@ -9,11 +9,22 @@ import Typography from "@mui/material/Typography";
 
 interface CompanyCardProps {
   empresa: Empresa;
+  onClick?: (empresa: Empresa) => void;
 }
 
-export default function CompanyCard({ empresa }: CompanyCardProps) {
+export default function CompanyCard({ empresa, onClick }: CompanyCardProps) {
   return (
-    <Card sx={{ height: "100%" }}>
+    <Card
+      sx={{
+        height: "100%",
+        cursor: onClick ? "pointer" : "default",
+        transition: "transform 0.1s ease-in-out",
+        "&:hover": onClick ? { transform: "translateY(-2px)" } : undefined,
+      }}
+      onClick={onClick ? () => onClick(empresa) : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <CardContent>
         <Box>
           <Typography

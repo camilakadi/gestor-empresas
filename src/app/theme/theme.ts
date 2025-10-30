@@ -51,9 +51,7 @@ export const theme = createTheme({
       fontSize: "0.875rem",
     },
   },
-  shape: {
-    borderRadius: 12,
-  },
+  shape: {},
   components: {
     MuiCard: {
       styleOverrides: {
@@ -64,6 +62,16 @@ export const theme = createTheme({
             boxShadow: "0 4px 16px rgba(0, 0, 0, 0.15)",
             transform: "translateY(-4px)",
           },
+          borderRadius: "12px",
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontWeight: 700,
+          fontSize: "1.25rem",
+          borderBottom: "1px solid #e0e0e0",
         },
       },
     },

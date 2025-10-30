@@ -1,4 +1,5 @@
 import CompanyCard from "@/components/CompanyCard";
+import RendimentoModal from "@/components/RendimentoModal";
 import { Empresa } from "@/types/company";
 import {
   Alert,
@@ -16,6 +17,8 @@ export default function Home() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -46,6 +49,16 @@ export default function Home() {
 
     fetchCompanies();
   }, []);
+
+  const handleOpenModal = (empresa: Empresa) => {
+    setSelectedEmpresa(empresa);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedEmpresa(null);
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -94,12 +107,21 @@ export default function Home() {
               }}
             >
               {empresas.map((empresa, index) => (
-                <CompanyCard key={index} empresa={empresa} />
+                <CompanyCard
+                  key={index}
+                  empresa={empresa}
+                  onClick={handleOpenModal}
+                />
               ))}
             </Box>
           )}
         </>
       )}
+      <RendimentoModal
+        open={modalOpen}
+        empresa={selectedEmpresa}
+        onClose={handleCloseModal}
+      />
     </Container>
   );
 }
