@@ -1,9 +1,11 @@
 import CompanyCard from "@/components/CompanyCard";
 import RendimentoModal from "@/components/RendimentoModal";
 import { Empresa } from "@/types/company";
+import AssignmentAddIcon from "@mui/icons-material/AssignmentAdd";
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   Container,
   Typography,
@@ -62,7 +64,14 @@ export default function Home() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <Typography
           variant="h1"
           component="h1"
@@ -71,6 +80,14 @@ export default function Home() {
         >
           Empresas
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          href="/cadastro"
+          startIcon={<AssignmentAddIcon />}
+        >
+          Cadastrar
+        </Button>
       </Box>
 
       {loading && (
