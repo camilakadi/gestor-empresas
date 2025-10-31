@@ -7,6 +7,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 
 type FormValues = {
@@ -70,6 +71,7 @@ function formatCNPJ(value: string): string {
 }
 
 export default function CadastroEmpresaPage() {
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>({
     cnpj: "",
     razaoSocial: "",
@@ -84,6 +86,24 @@ export default function CadastroEmpresaPage() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  type CNPJFromApi = {
+    cnpj: string;
+    nomeFantasia: string;
+    razaoSocial: string;
+    descricaoSituacaoCadastral: string;
+    logradouro: string;
+    numero: string;
+    bairro: string;
+    complemento: string;
+    municipio: string;
+    uf: string;
+    cep: string;
+    codigoMunicipioIbge: number;
+  };
 
   const canSubmit = useMemo(() => {
     const requiredFilled = [
@@ -124,7 +144,8 @@ export default function CadastroEmpresaPage() {
       }
       case "cep": {
         if (!v) return "CEP é obrigatório";
-        if (v.length > 100) return "Máximo de 100 caracteres";
+        const cepDigits = onlyDigits(v);
+        if (cepDigits.length !== 8) return "CEP deve ter 8 dígitos";
         return "";
       }
       case "estado": {
@@ -172,17 +193,113 @@ export default function CadastroEmpresaPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setGlobalError(null);
     const nextErrors = validateAll();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
-    setSubmitted(true);
+    setSubmitLoading(true);
 
-    console.log("Empresa cadastrada:", {
-      ...values,
-      cnpj: onlyDigits(values.cnpj),
+    const payload = {
+      cnpj: values.cnpj,
+      razaoSocial: values.razaoSocial,
+      nomeFantasia: values.nomeFantasia,
+      cep: values.cep,
       estado: values.estado.toUpperCase(),
+      municipio: values.municipio,
+      logradouro: values.logradouro,
       numero: values.numero ? Number(values.numero) : undefined,
-    });
+      complemento: values.complemento || undefined,
+    };
+
+    console.log("Enviando payload:", payload);
+
+    fetch(
+      "https://n8ndev.arkmeds.xyz/webhook/14686c31-d3ab-4356-9c90-9fbd2feff9f1/companies",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Erro ao cadastrar (status ${res.status})`);
+        }
+        setSubmitted(true);
+        router.push("/");
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "Falha ao enviar formulário";
+        setGlobalError(message);
+      })
+      .finally(() => setSubmitLoading(false));
+  }
+
+  async function handleLookupCNPJ() {
+    setGlobalError(null);
+    setErrors((prev) => ({ ...prev, cnpj: undefined }));
+    const cnpjMsg = validateField("cnpj", values.cnpj);
+    if (cnpjMsg) {
+      setErrors((prev) => ({ ...prev, cnpj: cnpjMsg }));
+      setGlobalError("Informe um CNPJ válido para buscar");
+      return;
+    }
+
+    setLookupLoading(true);
+    try {
+      const res = await fetch("https://api.arkmeds.com/cnpj", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": "nWCamsFISv84YLTZWPEN61sGyhDnSsqF3eIny8IA",
+        },
+        body: JSON.stringify({ cnpj: onlyDigits(values.cnpj) }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          text || `Falha na consulta de CNPJ (status ${res.status})`
+        );
+      }
+
+      const data: CNPJFromApi = await res.json();
+
+      setValues((prev) => ({
+        ...prev,
+        razaoSocial: data.razaoSocial || prev.razaoSocial,
+        nomeFantasia: data.nomeFantasia || prev.nomeFantasia,
+        cep: data.cep || prev.cep,
+        estado: (data.uf || prev.estado || "").toUpperCase(),
+        municipio: data.municipio || prev.municipio,
+        logradouro: data.logradouro || prev.logradouro,
+        numero: data.numero || prev.numero,
+        complemento: data.complemento || prev.complemento,
+      }));
+
+      setErrors((prev) => ({
+        ...prev,
+        razaoSocial: undefined,
+        nomeFantasia: undefined,
+        cep: undefined,
+        estado: undefined,
+        municipio: undefined,
+        logradouro: undefined,
+        numero: undefined,
+        complemento: undefined,
+      }));
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Erro desconhecido ao consultar CNPJ";
+      setGlobalError(message);
+    } finally {
+      setLookupLoading(false);
+    }
   }
 
   return (
@@ -215,7 +332,7 @@ export default function CadastroEmpresaPage() {
 
       <Box component="form" noValidate onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 12 }}>
+          <Grid size={{ xs: 12, sm: 9 }}>
             <TextField
               label="CNPJ"
               required
@@ -227,6 +344,17 @@ export default function CadastroEmpresaPage() {
               helperText={errors.cnpj}
               inputProps={{ inputMode: "numeric" }}
             />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 3 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              sx={{ height: "100%" }}
+              onClick={handleLookupCNPJ}
+              disabled={lookupLoading}
+            >
+              {lookupLoading ? "Buscando..." : "Buscar CNPJ"}
+            </Button>
           </Grid>
 
           <Grid size={{ xs: 12 }}>
@@ -352,16 +480,28 @@ export default function CadastroEmpresaPage() {
               <Button variant="outlined" href="/">
                 Cancelar
               </Button>
-              <Button type="submit" variant="contained" disabled={!canSubmit}>
-                Salvar
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!canSubmit || submitLoading}
+              >
+                {submitLoading ? "Salvando..." : "Salvar"}
               </Button>
             </Box>
           </Grid>
 
+          {globalError && (
+            <Grid size={{ xs: 12 }}>
+              <Typography color="error" sx={{ mt: 2 }}>
+                {globalError}
+              </Typography>
+            </Grid>
+          )}
+
           {submitted && (
             <Grid size={{ xs: 12 }}>
               <Typography color="success.main" sx={{ mt: 2 }}>
-                Empresa validada com sucesso! (simulação)
+                Empresa cadastrada com sucesso!
               </Typography>
             </Grid>
           )}
