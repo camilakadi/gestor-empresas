@@ -252,6 +252,18 @@ export default function CadastroEmpresaPage() {
       return;
     }
 
+    setValues((prev) => ({
+      ...prev,
+      razaoSocial: "",
+      nomeFantasia: "",
+      cep: "",
+      estado: "",
+      municipio: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+    }));
+
     setLookupLoading(true);
     try {
       const res = await fetch("https://api.arkmeds.com/cnpj", {
@@ -291,14 +303,14 @@ export default function CadastroEmpresaPage() {
 
       setValues((prev) => ({
         ...prev,
-        razaoSocial: data.razaoSocial || prev.razaoSocial,
-        nomeFantasia: data.nomeFantasia || prev.nomeFantasia,
-        cep: data.cep || prev.cep,
-        estado: (data.uf || prev.estado || "").toUpperCase(),
-        municipio: data.municipio || prev.municipio,
-        logradouro: data.logradouro || prev.logradouro,
-        numero: data.numero || prev.numero,
-        complemento: data.complemento || prev.complemento,
+        razaoSocial: data.razaoSocial || "",
+        nomeFantasia: data.nomeFantasia || "",
+        cep: data.cep || "",
+        estado: (data.uf || "").toUpperCase(),
+        municipio: data.municipio || "",
+        logradouro: data.logradouro || "",
+        numero: data.numero || "",
+        complemento: data.complemento || "",
       }));
 
       setErrors((prev) => ({
