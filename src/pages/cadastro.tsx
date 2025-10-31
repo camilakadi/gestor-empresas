@@ -264,9 +264,26 @@ export default function CadastroEmpresaPage() {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
+        let errorMessage = "";
+        try {
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const errJson = await res.json();
+            errorMessage =
+              errJson?.message || errJson?.error || errJson?.detail || "";
+          } else {
+            errorMessage = await res.text();
+          }
+        } catch {}
+
+        const normalized = (errorMessage || "").toLowerCase();
+        const hasNotFoundMsg = normalized.includes("não encontrado");
+        if (res.status === 404 || hasNotFoundMsg) {
+          errorMessage = `CNPJ ${values.cnpj} não encontrado.`;
+        }
+
         throw new Error(
-          text || `Falha na consulta de CNPJ (status ${res.status})`
+          errorMessage || `Falha na consulta de CNPJ (status ${res.status})`
         );
       }
 
