@@ -4,9 +4,11 @@ import {
   Button,
   Container,
   Grid,
+  Snackbar,
   TextField,
   Typography,
 } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 
@@ -490,21 +492,37 @@ export default function CadastroEmpresaPage() {
             </Box>
           </Grid>
 
-          {globalError && (
-            <Grid size={{ xs: 12 }}>
-              <Typography color="error" sx={{ mt: 2 }}>
-                {globalError}
-              </Typography>
-            </Grid>
-          )}
+          <Snackbar
+            open={Boolean(globalError)}
+            autoHideDuration={5000}
+            onClose={() => setGlobalError(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          >
+            <Alert
+              onClose={() => setGlobalError(null)}
+              severity="error"
+              variant="filled"
+              sx={{ width: "100%" }}
+            >
+              {globalError}
+            </Alert>
+          </Snackbar>
 
-          {submitted && (
-            <Grid size={{ xs: 12 }}>
-              <Typography color="success.main" sx={{ mt: 2 }}>
-                Empresa cadastrada com sucesso!
-              </Typography>
-            </Grid>
-          )}
+          <Snackbar
+            open={submitted}
+            autoHideDuration={4000}
+            onClose={() => setSubmitted(false)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          >
+            <Alert
+              onClose={() => setSubmitted(false)}
+              severity="success"
+              variant="filled"
+              sx={{ width: "100%" }}
+            >
+              Empresa cadastrada com sucesso!
+            </Alert>
+          </Snackbar>
         </Grid>
       </Box>
     </Container>
