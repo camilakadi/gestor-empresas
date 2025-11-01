@@ -483,7 +483,9 @@ export default function CadastroEmpresaPage() {
               variant="contained"
               color="secondary"
               onClick={handleLookupCNPJ}
-              disabled={lookupLoading}
+              disabled={
+                lookupLoading || !values.cnpj || !isValidCNPJ(values.cnpj)
+              }
               startIcon={<SearchIcon />}
               sx={{ height: "56px" }}
             >
@@ -501,7 +503,9 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("razaoSocial")}
               error={Boolean(errors.razaoSocial)}
               helperText={errors.razaoSocial}
+              placeholder={lookupLoading ? "Carregando..." : ""}
               slotProps={{ htmlInput: { maxLength: 100 } }}
+              disabled={lookupLoading}
             />
           </Grid>
 
@@ -515,7 +519,9 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("nomeFantasia")}
               error={Boolean(errors.nomeFantasia)}
               helperText={errors.nomeFantasia}
+              placeholder={lookupLoading ? "Carregando..." : ""}
               slotProps={{ htmlInput: { maxLength: 100 } }}
+              disabled={lookupLoading}
             />
           </Grid>
 
@@ -531,8 +537,9 @@ export default function CadastroEmpresaPage() {
               helperText={
                 errors.cep || (cepLoading ? "Buscando endereço..." : "")
               }
+              placeholder={lookupLoading ? "Carregando..." : ""}
               slotProps={{ htmlInput: { maxLength: 9 } }}
-              disabled={cepLoading}
+              disabled={cepLoading || lookupLoading}
             />
           </Grid>
 
@@ -546,14 +553,14 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("estado")}
               error={Boolean(errors.estado)}
               helperText={errors.estado}
-              placeholder={cepLoading ? "Carregando..." : ""}
+              placeholder={lookupLoading || cepLoading ? "Carregando..." : ""}
               slotProps={{
                 htmlInput: {
                   maxLength: 2,
                   style: { textTransform: "uppercase" },
                 },
               }}
-              disabled={cepLoading}
+              disabled={cepLoading || lookupLoading}
             />
           </Grid>
 
@@ -567,8 +574,8 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("municipio")}
               error={Boolean(errors.municipio)}
               helperText={errors.municipio}
-              placeholder={cepLoading ? "Carregando..." : ""}
-              disabled={cepLoading}
+              placeholder={lookupLoading || cepLoading ? "Carregando..." : ""}
+              disabled={cepLoading || lookupLoading}
             />
           </Grid>
 
@@ -581,8 +588,8 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("logradouro")}
               error={Boolean(errors.logradouro)}
               helperText={errors.logradouro}
-              placeholder={cepLoading ? "Carregando..." : ""}
-              disabled={cepLoading}
+              placeholder={lookupLoading || cepLoading ? "Carregando..." : ""}
+              disabled={cepLoading || lookupLoading}
             />
           </Grid>
 
@@ -596,9 +603,11 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("numero")}
               error={Boolean(errors.numero)}
               helperText={errors.numero || "Somente inteiros, sem negativos"}
+              placeholder={lookupLoading ? "Carregando..." : ""}
               slotProps={{
                 htmlInput: { inputMode: "numeric", step: 1, min: 0 },
               }}
+              disabled={lookupLoading}
             />
           </Grid>
 
@@ -611,9 +620,9 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("complemento")}
               error={Boolean(errors.complemento)}
               helperText={errors.complemento}
-              placeholder={cepLoading ? "Carregando..." : ""}
+              placeholder={lookupLoading || cepLoading ? "Carregando..." : ""}
               slotProps={{ htmlInput: { maxLength: 300 } }}
-              disabled={cepLoading}
+              disabled={cepLoading || lookupLoading}
             />
           </Grid>
 
