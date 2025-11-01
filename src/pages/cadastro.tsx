@@ -409,7 +409,7 @@ const CadastroEmpresaPage = () => {
         ...prev,
         razaoSocial: data.razaoSocial || "",
         nomeFantasia: data.nomeFantasia || "",
-        cep: data.cep || "",
+        cep: data.cep ? formatCEP(data.cep) : "",
         estado: (data.uf || "").toUpperCase(),
         municipio: data.municipio || "",
         logradouro: data.logradouro || "",
