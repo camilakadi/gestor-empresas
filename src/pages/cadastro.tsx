@@ -334,7 +334,9 @@ const CadastroEmpresaPage = () => {
             throw new Error(text || `Erro ao cadastrar (status ${res.status})`);
           }
           setSubmitted(true);
-          router.push("/");
+          setTimeout(() => {
+            router.push("/");
+          }, 1500);
         })
         .catch((err: unknown) => {
           const message =
