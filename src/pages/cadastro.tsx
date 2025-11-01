@@ -1,4 +1,5 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
@@ -363,11 +364,17 @@ export default function CadastroEmpresaPage() {
 
       <Box component="form" noValidate onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 9 }}>
+          <Grid
+            size={{ xs: 12, sm: 6 }}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: 2,
+            }}
+          >
             <TextField
               label="CNPJ"
               required
-              fullWidth
               value={values.cnpj}
               onChange={(e) => setField("cnpj", formatCNPJ(e.target.value))}
               onBlur={() => handleBlur("cnpj")}
@@ -375,14 +382,14 @@ export default function CadastroEmpresaPage() {
               helperText={errors.cnpj}
               inputProps={{ inputMode: "numeric" }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 3 }}>
+
             <Button
-              fullWidth
-              variant="outlined"
-              sx={{ height: "100%" }}
+              variant="contained"
+              color="secondary"
               onClick={handleLookupCNPJ}
               disabled={lookupLoading}
+              startIcon={<SearchIcon />}
+              sx={{ height: "56px" }}
             >
               {lookupLoading ? "Buscando..." : "Buscar CNPJ"}
             </Button>
