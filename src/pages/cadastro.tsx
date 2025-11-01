@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FormValues = {
   cnpj: string;
@@ -27,11 +27,11 @@ type FormValues = {
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
-function onlyDigits(value: string): string {
+const onlyDigits = (value: string): string => {
   return value.replace(/\D+/g, "");
-}
+};
 
-function isValidCNPJ(input: string): boolean {
+const isValidCNPJ = (input: string): boolean => {
   const digits = onlyDigits(input);
   if (digits.length !== 14) return false;
   if (/^(\d)\1{13}$/.test(digits)) return false;
@@ -54,9 +54,9 @@ function isValidCNPJ(input: string): boolean {
   );
 
   return digits.endsWith(`${d1}${d2}`);
-}
+};
 
-function formatCNPJ(value: string): string {
+const formatCNPJ = (value: string): string => {
   const digits = onlyDigits(value).slice(0, 14);
   if (digits.length <= 2) return digits;
   if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
@@ -71,15 +71,15 @@ function formatCNPJ(value: string): string {
     5,
     8
   )}/${digits.slice(8, 12)}-${digits.slice(12)}`;
-}
+};
 
-function formatCEP(value: string): string {
+const formatCEP = (value: string): string => {
   const digits = onlyDigits(value).slice(0, 8);
   if (digits.length <= 5) return digits;
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-}
+};
 
-export default function CadastroEmpresaPage() {
+const CadastroEmpresaPage = () => {
   const router = useRouter();
   const [values, setValues] = useState<FormValues>({
     cnpj: "",
@@ -128,6 +128,156 @@ export default function CadastroEmpresaPage() {
     return requiredFilled;
   }, [values]);
 
+  const setField = useCallback(
+    <K extends keyof FormValues>(key: K, val: FormValues[K]) => {
+      setValues((prev) => ({ ...prev, [key]: val }));
+    },
+    []
+  ) as <K extends keyof FormValues>(key: K, val: FormValues[K]) => void;
+
+  const validateField = useCallback(
+    <K extends keyof FormValues>(key: K, val: FormValues[K]): string => {
+      const v = typeof val === "string" ? val.trim() : (val as string);
+      switch (key) {
+        case "cnpj": {
+          if (!v) return "CNPJ é obrigatório";
+          if (!isValidCNPJ(v)) return "CNPJ inválido";
+          return "";
+        }
+        case "razaoSocial": {
+          if (!v) return "Razão Social é obrigatória";
+          if (v.length > 100) return "Máximo de 100 caracteres";
+          return "";
+        }
+        case "nomeFantasia": {
+          if (!v) return "Nome Fantasia é obrigatório";
+          if (v.length > 100) return "Máximo de 100 caracteres";
+          return "";
+        }
+        case "cep": {
+          if (!v) return "CEP é obrigatório";
+          const cepDigits = onlyDigits(v);
+          if (cepDigits.length !== 8) return "CEP deve ter 8 dígitos";
+          return "";
+        }
+        case "estado": {
+          if (!v) return "Estado é obrigatório";
+          if (v.length > 2) return "Máximo de 2 caracteres";
+          return "";
+        }
+        case "municipio": {
+          if (!v) return "Município é obrigatório";
+          return "";
+        }
+        case "logradouro": {
+          return "";
+        }
+        case "numero": {
+          if (!v) return "";
+          const num = Number(v);
+          if (!Number.isFinite(num)) return "Número inválido";
+          if (!Number.isInteger(num)) return "Somente números inteiros";
+          if (num < 0) return "Sem negativos";
+          return "";
+        }
+        case "complemento": {
+          if (v.length > 300) return "Máximo de 300 caracteres";
+          return "";
+        }
+        default:
+          return "";
+      }
+    },
+    []
+  ) as <K extends keyof FormValues>(key: K, val: FormValues[K]) => string;
+
+  const validateAll = useCallback((): FormErrors => {
+    const next: FormErrors = {};
+    (Object.keys(values) as (keyof FormValues)[]).forEach((k) => {
+      const msg = validateField(k, values[k]);
+      if (msg) next[k] = msg;
+    });
+    return next;
+  }, [values, validateField]);
+
+  const handleBlur = useCallback(
+    <K extends keyof FormValues>(key: K) => {
+      const message = validateField(key, values[key]);
+      setErrors((prev) => ({ ...prev, [key]: message || undefined }));
+    },
+    [values, validateField]
+  ) as <K extends keyof FormValues>(key: K) => void;
+
+  const handleLookupCEP = useCallback(
+    async (cep: string, forceUpdate = false) => {
+      const cepDigits = onlyDigits(cep);
+      if (cepDigits.length !== 8) return;
+
+      if (forceUpdate) {
+        setValues((prev) => ({
+          ...prev,
+          logradouro: "",
+          municipio: "",
+          estado: "",
+          complemento: "",
+        }));
+      }
+
+      setCepLoading(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+
+        if (!res.ok) {
+          throw new Error(`Erro ao consultar CEP (status ${res.status})`);
+        }
+
+        const data = await res.json();
+
+        if (data.erro) {
+          throw new Error(`CEP ${cep} não encontrado.`);
+        }
+
+        setValues((prev) => ({
+          ...prev,
+          logradouro: forceUpdate
+            ? data.logradouro || prev.logradouro || ""
+            : prev.logradouro || data.logradouro || "",
+          municipio: forceUpdate
+            ? data.localidade || prev.municipio || ""
+            : prev.municipio || data.localidade || "",
+          estado: forceUpdate
+            ? (data.uf || prev.estado || "").toUpperCase()
+            : prev.estado || (data.uf || "").toUpperCase(),
+          complemento: forceUpdate
+            ? data.complemento || prev.complemento || ""
+            : prev.complemento || data.complemento || "",
+        }));
+
+        setErrors((prev) => ({
+          ...prev,
+          logradouro: undefined,
+          municipio: undefined,
+          estado: undefined,
+        }));
+      } catch (e) {
+        const errorMessage =
+          e instanceof Error ? e.message : "Erro desconhecido ao consultar CEP";
+        setGlobalError(errorMessage);
+
+        setValues((prev) => ({
+          ...prev,
+          logradouro: "",
+          municipio: "",
+          estado: "",
+          complemento: "",
+        }));
+      } finally {
+        setCepLoading(false);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     const cepDigits = onlyDigits(values.cep);
     if (
@@ -142,200 +292,61 @@ export default function CadastroEmpresaPage() {
 
       return () => clearTimeout(timeoutId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.cep]);
+  }, [values.cep, cepLoading, handleLookupCEP]);
 
-  function setField<K extends keyof FormValues>(key: K, val: FormValues[K]) {
-    setValues((prev) => ({ ...prev, [key]: val }));
-  }
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      setGlobalError(null);
+      const nextErrors = validateAll();
+      setErrors(nextErrors);
+      if (Object.keys(nextErrors).length > 0) return;
+      setSubmitLoading(true);
 
-  function validateField<K extends keyof FormValues>(
-    key: K,
-    val: FormValues[K]
-  ): string {
-    const v = typeof val === "string" ? val.trim() : (val as string);
-    switch (key) {
-      case "cnpj": {
-        if (!v) return "CNPJ é obrigatório";
-        if (!isValidCNPJ(v)) return "CNPJ inválido";
-        return "";
-      }
-      case "razaoSocial": {
-        if (!v) return "Razão Social é obrigatória";
-        if (v.length > 100) return "Máximo de 100 caracteres";
-        return "";
-      }
-      case "nomeFantasia": {
-        if (!v) return "Nome Fantasia é obrigatório";
-        if (v.length > 100) return "Máximo de 100 caracteres";
-        return "";
-      }
-      case "cep": {
-        if (!v) return "CEP é obrigatório";
-        const cepDigits = onlyDigits(v);
-        if (cepDigits.length !== 8) return "CEP deve ter 8 dígitos";
-        return "";
-      }
-      case "estado": {
-        if (!v) return "Estado é obrigatório";
-        if (v.length > 2) return "Máximo de 2 caracteres";
-        return "";
-      }
-      case "municipio": {
-        if (!v) return "Município é obrigatório";
-        return "";
-      }
-      case "logradouro": {
-        return "";
-      }
-      case "numero": {
-        if (!v) return "";
-        const num = Number(v);
-        if (!Number.isFinite(num)) return "Número inválido";
-        if (!Number.isInteger(num)) return "Somente números inteiros";
-        if (num < 0) return "Sem negativos";
-        return "";
-      }
-      case "complemento": {
-        if (v.length > 300) return "Máximo de 300 caracteres";
-        return "";
-      }
-      default:
-        return "";
-    }
-  }
+      const payload = {
+        cnpj: values.cnpj,
+        razaoSocial: values.razaoSocial,
+        nomeFantasia: values.nomeFantasia,
+        cep: values.cep,
+        estado: values.estado.toUpperCase(),
+        municipio: values.municipio,
+        logradouro: values.logradouro,
+        numero: values.numero ? Number(values.numero) : undefined,
+        complemento: values.complemento || undefined,
+      };
 
-  function validateAll(): FormErrors {
-    const next: FormErrors = {};
-    (Object.keys(values) as (keyof FormValues)[]).forEach((k) => {
-      const msg = validateField(k, values[k]);
-      if (msg) next[k] = msg;
-    });
-    return next;
-  }
+      console.log("Enviando payload:", payload);
 
-  function handleBlur<K extends keyof FormValues>(key: K) {
-    const message = validateField(key, values[key]);
-    setErrors((prev) => ({ ...prev, [key]: message || undefined }));
-  }
-
-  async function handleLookupCEP(cep: string, forceUpdate = false) {
-    const cepDigits = onlyDigits(cep);
-    if (cepDigits.length !== 8) return;
-
-    if (forceUpdate) {
-      setValues((prev) => ({
-        ...prev,
-        logradouro: "",
-        municipio: "",
-        estado: "",
-        complemento: "",
-      }));
-    }
-
-    setCepLoading(true);
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
-
-      if (!res.ok) {
-        throw new Error(`Erro ao consultar CEP (status ${res.status})`);
-      }
-
-      const data = await res.json();
-
-      if (data.erro) {
-        throw new Error(`CEP ${cep} não encontrado.`);
-      }
-
-      setValues((prev) => ({
-        ...prev,
-        logradouro: forceUpdate
-          ? data.logradouro || prev.logradouro || ""
-          : prev.logradouro || data.logradouro || "",
-        municipio: forceUpdate
-          ? data.localidade || prev.municipio || ""
-          : prev.municipio || data.localidade || "",
-        estado: forceUpdate
-          ? (data.uf || prev.estado || "").toUpperCase()
-          : prev.estado || (data.uf || "").toUpperCase(),
-        complemento: forceUpdate
-          ? data.complemento || prev.complemento || ""
-          : prev.complemento || data.complemento || "",
-      }));
-
-      setErrors((prev) => ({
-        ...prev,
-        logradouro: undefined,
-        municipio: undefined,
-        estado: undefined,
-      }));
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : "Erro desconhecido ao consultar CEP";
-      setGlobalError(errorMessage);
-
-      setValues((prev) => ({
-        ...prev,
-        logradouro: "",
-        municipio: "",
-        estado: "",
-        complemento: "",
-      }));
-    } finally {
-      setCepLoading(false);
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setGlobalError(null);
-    const nextErrors = validateAll();
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-    setSubmitLoading(true);
-
-    const payload = {
-      cnpj: values.cnpj,
-      razaoSocial: values.razaoSocial,
-      nomeFantasia: values.nomeFantasia,
-      cep: values.cep,
-      estado: values.estado.toUpperCase(),
-      municipio: values.municipio,
-      logradouro: values.logradouro,
-      numero: values.numero ? Number(values.numero) : undefined,
-      complemento: values.complemento || undefined,
-    };
-
-    console.log("Enviando payload:", payload);
-
-    fetch(
-      "https://n8ndev.arkmeds.xyz/webhook/14686c31-d3ab-4356-9c90-9fbd2feff9f1/companies",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    )
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || `Erro ao cadastrar (status ${res.status})`);
+      fetch(
+        "https://n8ndev.arkmeds.xyz/webhook/14686c31-d3ab-4356-9c90-9fbd2feff9f1/companies",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+          },
+          body: JSON.stringify(payload),
         }
-        setSubmitted(true);
-        router.push("/");
-      })
-      .catch((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : "Falha ao enviar formulário";
-        setGlobalError(message);
-      })
-      .finally(() => setSubmitLoading(false));
-  }
+      )
+        .then(async (res) => {
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(text || `Erro ao cadastrar (status ${res.status})`);
+          }
+          setSubmitted(true);
+          router.push("/");
+        })
+        .catch((err: unknown) => {
+          const message =
+            err instanceof Error ? err.message : "Falha ao enviar formulário";
+          setGlobalError(message);
+        })
+        .finally(() => setSubmitLoading(false));
+    },
+    [values, validateAll, router]
+  );
 
-  async function handleLookupCNPJ() {
+  const handleLookupCNPJ = useCallback(async () => {
     setGlobalError(null);
     setErrors((prev) => ({ ...prev, cnpj: undefined }));
     const cnpjMsg = validateField("cnpj", values.cnpj);
@@ -428,7 +439,7 @@ export default function CadastroEmpresaPage() {
     } finally {
       setLookupLoading(false);
     }
-  }
+  }, [values.cnpj, validateField, handleLookupCEP]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -683,4 +694,6 @@ export default function CadastroEmpresaPage() {
       </Box>
     </Container>
   );
-}
+};
+
+export default CadastroEmpresaPage;

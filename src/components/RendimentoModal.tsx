@@ -12,7 +12,7 @@ import {
   DialogTitle,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface RendimentoModalProps {
   open: boolean;
@@ -20,62 +20,70 @@ interface RendimentoModalProps {
   onClose: () => void;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || "";
-
-export default function RendimentoModal({
+const RendimentoModal = ({
   open,
   empresa,
   onClose,
-}: RendimentoModalProps) {
+}: RendimentoModalProps) => {
   const [rendimento, setRendimento] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRendimento = async () => {
-      if (!open || !empresa) return;
+  const API_URL = useMemo(() => process.env.NEXT_PUBLIC_API_URL || "", []);
+  const TOKEN = useMemo(() => process.env.NEXT_PUBLIC_API_TOKEN || "", []);
 
-      setLoading(true);
-      setError(null);
-      setRendimento(null);
+  const fetchRendimento = useCallback(async () => {
+    if (!open || !empresa) return;
 
-      const cnpj = empresa.cnpj
-        .replaceAll(".", "")
-        .replaceAll("-", "")
-        .replaceAll("/", "");
+    setLoading(true);
+    setError(null);
+    setRendimento(null);
 
-      try {
-        const url = `${API_URL}cnpj/${cnpj}`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`Erro ao buscar rendimento: ${response.statusText}`);
-        }
-        const data = await response.json();
-        const valor = typeof data === "number" ? data : data?.valor_rendimento;
-        if (typeof valor !== "number") {
-          throw new Error("Resposta inválida do servidor");
-        }
-        setRendimento(valor);
-      } catch (e) {
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Erro desconhecido ao carregar rendimento"
-        );
-      } finally {
-        setLoading(false);
+    const cnpj = empresa.cnpj
+      .replaceAll(".", "")
+      .replaceAll("-", "")
+      .replaceAll("/", "");
+
+    try {
+      const url = `${API_URL}cnpj/${cnpj}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar rendimento: ${response.statusText}`);
       }
-    };
+      const data = await response.json();
+      const valor = typeof data === "number" ? data : data?.valor_rendimento;
+      if (typeof valor !== "number") {
+        throw new Error("Resposta inválida do servidor");
+      }
+      setRendimento(valor);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Erro desconhecido ao carregar rendimento"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [open, empresa, API_URL, TOKEN]);
 
+  useEffect(() => {
     fetchRendimento();
-  }, [open, empresa]);
+  }, [fetchRendimento]);
+
+  const formattedRendimento = useMemo(() => {
+    if (rendimento === null) return "";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(rendimento);
+  }, [rendimento]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -96,10 +104,7 @@ export default function RendimentoModal({
               Rendimento atual
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(rendimento)}
+              {formattedRendimento}
             </Typography>
           </Box>
         )}
@@ -112,4 +117,6 @@ export default function RendimentoModal({
       </DialogActions>
     </Dialog>
   );
-}
+};
+
+export default RendimentoModal;

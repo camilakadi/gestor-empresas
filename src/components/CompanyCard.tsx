@@ -6,22 +6,34 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
+import { useCallback, useMemo } from "react";
 
 interface CompanyCardProps {
   empresa: Empresa;
   onClick?: (empresa: Empresa) => void;
 }
 
-export default function CompanyCard({ empresa, onClick }: CompanyCardProps) {
+const CompanyCard = ({ empresa, onClick }: CompanyCardProps) => {
+  const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick(empresa);
+    }
+  }, [onClick, empresa]);
+
+  const cardSx = useMemo(
+    () => ({
+      height: "100%",
+      cursor: onClick ? "pointer" : "default",
+      transition: "transform 0.1s ease-in-out",
+      "&:hover": onClick ? { transform: "translateY(-2px)" } : undefined,
+    }),
+    [onClick]
+  );
+
   return (
     <Card
-      sx={{
-        height: "100%",
-        cursor: onClick ? "pointer" : "default",
-        transition: "transform 0.1s ease-in-out",
-        "&:hover": onClick ? { transform: "translateY(-2px)" } : undefined,
-      }}
-      onClick={onClick ? () => onClick(empresa) : undefined}
+      sx={cardSx}
+      onClick={onClick ? handleClick : undefined}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
@@ -76,4 +88,6 @@ export default function CompanyCard({ empresa, onClick }: CompanyCardProps) {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default CompanyCard;

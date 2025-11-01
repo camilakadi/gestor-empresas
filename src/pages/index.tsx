@@ -10,57 +10,57 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || "";
-
-export default function Home() {
+const Home = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
 
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        });
+  const API_URL = useMemo(() => process.env.NEXT_PUBLIC_API_URL || "", []);
+  const TOKEN = useMemo(() => process.env.NEXT_PUBLIC_API_TOKEN || "", []);
 
-        if (!response.ok) {
-          throw new Error(`Erro ao buscar empresas: ${response.statusText}`);
-        }
+  const fetchCompanies = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
 
-        const data = await response.json();
-        setEmpresas(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro desconhecido");
-        console.error("Erro ao buscar empresas:", err);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar empresas: ${response.statusText}`);
       }
-    };
 
+      const data = await response.json();
+      setEmpresas(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      console.error("Erro ao buscar empresas:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL, TOKEN]);
+
+  useEffect(() => {
     fetchCompanies();
-  }, []);
+  }, [fetchCompanies]);
 
-  const handleOpenModal = (empresa: Empresa) => {
+  const handleOpenModal = useCallback((empresa: Empresa) => {
     setSelectedEmpresa(empresa);
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setModalOpen(false);
     setSelectedEmpresa(null);
-  };
+  }, []);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -141,4 +141,6 @@ export default function Home() {
       />
     </Container>
   );
-}
+};
+
+export default Home;
