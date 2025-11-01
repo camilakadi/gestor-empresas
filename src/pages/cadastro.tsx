@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import { useRouter } from "next/router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type FormValues = {
   cnpj: string;
@@ -73,6 +73,12 @@ function formatCNPJ(value: string): string {
   )}/${digits.slice(8, 12)}-${digits.slice(12)}`;
 }
 
+function formatCEP(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
 export default function CadastroEmpresaPage() {
   const router = useRouter();
   const [values, setValues] = useState<FormValues>({
@@ -90,8 +96,10 @@ export default function CadastroEmpresaPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const lastCepSearched = useRef<string>("");
 
   type CNPJFromApi = {
     cnpj: string;
@@ -119,6 +127,23 @@ export default function CadastroEmpresaPage() {
     ].every((v) => v.trim().length > 0);
     return requiredFilled;
   }, [values]);
+
+  useEffect(() => {
+    const cepDigits = onlyDigits(values.cep);
+    if (
+      cepDigits.length === 8 &&
+      !cepLoading &&
+      cepDigits !== lastCepSearched.current
+    ) {
+      lastCepSearched.current = cepDigits;
+      const timeoutId = setTimeout(() => {
+        handleLookupCEP(values.cep, true);
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.cep]);
 
   function setField<K extends keyof FormValues>(key: K, val: FormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: val }));
@@ -192,6 +217,73 @@ export default function CadastroEmpresaPage() {
   function handleBlur<K extends keyof FormValues>(key: K) {
     const message = validateField(key, values[key]);
     setErrors((prev) => ({ ...prev, [key]: message || undefined }));
+  }
+
+  async function handleLookupCEP(cep: string, forceUpdate = false) {
+    const cepDigits = onlyDigits(cep);
+    if (cepDigits.length !== 8) return;
+
+    if (forceUpdate) {
+      setValues((prev) => ({
+        ...prev,
+        logradouro: "",
+        municipio: "",
+        estado: "",
+        complemento: "",
+      }));
+    }
+
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+
+      if (!res.ok) {
+        throw new Error(`Erro ao consultar CEP (status ${res.status})`);
+      }
+
+      const data = await res.json();
+
+      if (data.erro) {
+        throw new Error(`CEP ${cep} não encontrado.`);
+      }
+
+      setValues((prev) => ({
+        ...prev,
+        logradouro: forceUpdate
+          ? data.logradouro || prev.logradouro || ""
+          : prev.logradouro || data.logradouro || "",
+        municipio: forceUpdate
+          ? data.localidade || prev.municipio || ""
+          : prev.municipio || data.localidade || "",
+        estado: forceUpdate
+          ? (data.uf || prev.estado || "").toUpperCase()
+          : prev.estado || (data.uf || "").toUpperCase(),
+        complemento: forceUpdate
+          ? data.complemento || prev.complemento || ""
+          : prev.complemento || data.complemento || "",
+      }));
+
+      setErrors((prev) => ({
+        ...prev,
+        logradouro: undefined,
+        municipio: undefined,
+        estado: undefined,
+      }));
+    } catch (e) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Erro desconhecido ao consultar CEP";
+      setGlobalError(errorMessage);
+
+      setValues((prev) => ({
+        ...prev,
+        logradouro: "",
+        municipio: "",
+        estado: "",
+        complemento: "",
+      }));
+    } finally {
+      setCepLoading(false);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -325,6 +417,10 @@ export default function CadastroEmpresaPage() {
         numero: undefined,
         complemento: undefined,
       }));
+
+      if (data.cep) {
+        await handleLookupCEP(data.cep, true);
+      }
     } catch (e) {
       const message =
         e instanceof Error ? e.message : "Erro desconhecido ao consultar CNPJ";
@@ -429,11 +525,14 @@ export default function CadastroEmpresaPage() {
               required
               fullWidth
               value={values.cep}
-              onChange={(e) => setField("cep", e.target.value)}
+              onChange={(e) => setField("cep", formatCEP(e.target.value))}
               onBlur={() => handleBlur("cep")}
               error={Boolean(errors.cep)}
-              helperText={errors.cep}
-              slotProps={{ htmlInput: { maxLength: 100 } }}
+              helperText={
+                errors.cep || (cepLoading ? "Buscando endereço..." : "")
+              }
+              slotProps={{ htmlInput: { maxLength: 9 } }}
+              disabled={cepLoading}
             />
           </Grid>
 
@@ -447,12 +546,14 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("estado")}
               error={Boolean(errors.estado)}
               helperText={errors.estado}
+              placeholder={cepLoading ? "Carregando..." : ""}
               slotProps={{
                 htmlInput: {
                   maxLength: 2,
                   style: { textTransform: "uppercase" },
                 },
               }}
+              disabled={cepLoading}
             />
           </Grid>
 
@@ -466,6 +567,8 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("municipio")}
               error={Boolean(errors.municipio)}
               helperText={errors.municipio}
+              placeholder={cepLoading ? "Carregando..." : ""}
+              disabled={cepLoading}
             />
           </Grid>
 
@@ -478,6 +581,8 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("logradouro")}
               error={Boolean(errors.logradouro)}
               helperText={errors.logradouro}
+              placeholder={cepLoading ? "Carregando..." : ""}
+              disabled={cepLoading}
             />
           </Grid>
 
@@ -506,7 +611,9 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("complemento")}
               error={Boolean(errors.complemento)}
               helperText={errors.complemento}
+              placeholder={cepLoading ? "Carregando..." : ""}
               slotProps={{ htmlInput: { maxLength: 300 } }}
+              disabled={cepLoading}
             />
           </Grid>
 
