@@ -380,7 +380,7 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("cnpj")}
               error={Boolean(errors.cnpj)}
               helperText={errors.cnpj}
-              inputProps={{ inputMode: "numeric" }}
+              slotProps={{ htmlInput: { inputMode: "numeric" } }}
             />
 
             <Button
@@ -405,7 +405,7 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("razaoSocial")}
               error={Boolean(errors.razaoSocial)}
               helperText={errors.razaoSocial}
-              inputProps={{ maxLength: 100 }}
+              slotProps={{ htmlInput: { maxLength: 100 } }}
             />
           </Grid>
 
@@ -419,7 +419,7 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("nomeFantasia")}
               error={Boolean(errors.nomeFantasia)}
               helperText={errors.nomeFantasia}
-              inputProps={{ maxLength: 100 }}
+              slotProps={{ htmlInput: { maxLength: 100 } }}
             />
           </Grid>
 
@@ -433,7 +433,7 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("cep")}
               error={Boolean(errors.cep)}
               helperText={errors.cep}
-              inputProps={{ maxLength: 100 }}
+              slotProps={{ htmlInput: { maxLength: 100 } }}
             />
           </Grid>
 
@@ -447,9 +447,11 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("estado")}
               error={Boolean(errors.estado)}
               helperText={errors.estado}
-              inputProps={{
-                maxLength: 2,
-                style: { textTransform: "uppercase" },
+              slotProps={{
+                htmlInput: {
+                  maxLength: 2,
+                  style: { textTransform: "uppercase" },
+                },
               }}
             />
           </Grid>
@@ -489,7 +491,9 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("numero")}
               error={Boolean(errors.numero)}
               helperText={errors.numero || "Somente inteiros, sem negativos"}
-              inputProps={{ inputMode: "numeric", step: 1, min: 0 }}
+              slotProps={{
+                htmlInput: { inputMode: "numeric", step: 1, min: 0 },
+              }}
             />
           </Grid>
 
@@ -502,7 +506,7 @@ export default function CadastroEmpresaPage() {
               onBlur={() => handleBlur("complemento")}
               error={Boolean(errors.complemento)}
               helperText={errors.complemento}
-              inputProps={{ maxLength: 300 }}
+              slotProps={{ htmlInput: { maxLength: 300 } }}
             />
           </Grid>
 
