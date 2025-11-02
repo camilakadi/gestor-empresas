@@ -52,14 +52,18 @@ const RendimentoModal = ({ open, empresa, onClose }: RendimentoModalProps) => {
           Authorization: `Bearer ${TOKEN}`,
         },
       });
+
       if (!response.ok) {
         throw new Error(`Erro ao buscar rendimento: ${response.statusText}`);
       }
+
       const data = await response.json();
       const valor = typeof data === "number" ? data : data?.valor_rendimento;
+
       if (typeof valor !== "number") {
         throw new Error("Resposta inválida do servidor");
       }
+
       setRendimento(valor);
     } catch (e) {
       setError(
@@ -78,6 +82,7 @@ const RendimentoModal = ({ open, empresa, onClose }: RendimentoModalProps) => {
 
   const formattedRendimento = useMemo(() => {
     if (rendimento === null) return "";
+
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
@@ -92,7 +97,7 @@ const RendimentoModal = ({ open, empresa, onClose }: RendimentoModalProps) => {
 
       <DialogContent>
         {loading && (
-          <Box display="flex" justifyContent="center" py={4}>
+          <Box display="flex" justifyContent="center" py={2}>
             <CircularProgress />
           </Box>
         )}
