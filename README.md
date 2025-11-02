@@ -1,36 +1,169 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gestor de Empresas
 
-## Getting Started
+Sistema de gestão e visualização de empresas desenvolvido com Next.js e Material-UI.
 
-First, run the development server:
+## 🚀 Funcionalidades
+
+- 📋 Listagem de empresas cadastradas
+- ➕ Cadastro de novas empresas
+- 🔍 Busca automática de dados por CNPJ
+- 📍 Busca automática de endereço por CEP
+- 💰 Visualização de rendimento das empresas
+- ✅ Validação de formulários em tempo real
+
+## 📋 Pré-requisitos
+
+- Node.js 18.x ou superior
+- npm
+- Variáveis de ambiente configuradas (ver seção [Configuração](#-configuração))
+
+## 🛠️ Instalação
+
+1. Clone o repositório:
+
+```bash
+git clone https://github.com/camilakadi/gestor-empresas.git
+cd gestor-empresas
+```
+
+2. Instale as dependências:
+
+```bash
+npm install
+```
+
+3. Configure as variáveis de ambiente (veja a seção [Configuração](#-configuração))
+
+## ⚙️ Configuração
+
+Crie um arquivo `.env.local` na raiz do projeto e copie as variáves de ambiente do arquivo `.env.example`.
+
+## 🏃 Como Rodar
+
+### Modo Desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O aplicativo estará disponível em [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Modo Produção
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Build do projeto:
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+2. Inicie o servidor:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧪 Testes
 
-## Deploy on Vercel
+### Testes End-to-End com Cypress
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+O projeto inclui testes E2E automatizados com Cypress que cobrem:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Listagem de empresas e abertura de modal de rendimento
+- Cadastro de empresas com busca automática de CNPJ
+- Validações de formulário
+- Formatação automática de campos (CNPJ, CEP)
+
+#### Executar Testes
+
+**Modo Interativo (Recomendado para desenvolvimento):**
+
+```bash
+npm run cypress:open
+```
+
+Abre a interface gráfica do Cypress onde você pode ver e executar os testes individualmente.
+
+**Modo Headless (CI/CD):**
+
+```bash
+npm run cypress:run
+```
+
+Executa todos os testes em modo headless (sem interface gráfica).
+
+**Alias:**
+
+```bash
+npm run test:e2e
+```
+
+#### Pré-requisitos para os Testes
+
+Antes de executar os testes, certifique-se de que:
+
+1. O servidor de desenvolvimento está rodando (`npm run dev`)
+2. As variáveis de ambiente estão configuradas corretamente
+
+Os testes usam mocks das APIs, então não dependem de serviços externos reais.
+
+## 📁 Estrutura do Projeto
+
+```
+gestor-empresas/
+├── src/
+│   ├── app/              # Configurações do App Router
+│   │   ├── theme/        # Tema Material-UI
+│   │   └── globals.css   # Estilos globais
+│   ├── components/       # Componentes React
+│   │   ├── CompanyCard.tsx
+│   │   ├── RendimentoModal.tsx
+│   │   ├── Header.tsx
+│   │   └── Footer.tsx
+│   ├── pages/            # Páginas da aplicação
+│   │   ├── index.tsx     # Listagem de empresas
+│   │   ├── cadastro.tsx  # Formulário de cadastro
+│   │   ├── _app.tsx      # Configuração do app
+│   │   └── _document.tsx # Documento HTML
+│   └── types/            # Definições de tipos TypeScript
+│       └── company.ts
+├── cypress/              # Testes E2E
+│   ├── e2e/              # Arquivos de teste
+│   ├── fixtures/         # Dados de teste
+│   └── support/          # Comandos e configurações
+├── public/               # Arquivos estáticos
+├── .env.example          # Exemplo de variáveis de ambiente
+├── cypress.config.ts     # Configuração do Cypress
+└── package.json
+```
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Next.js 16** - Framework React
+- **React 19** - Biblioteca UI
+- **TypeScript** - Tipagem estática
+- **Material-UI (MUI) 7** - Componentes de interface
+- **Cypress** - Testes end-to-end
+- **ESLint** - Linting de código
+
+## 📝 Scripts Disponíveis
+
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Gera a build de produção
+- `npm run start` - Inicia o servidor de produção
+- `npm run lint` - Executa o linter
+- `npm run cypress:open` - Abre o Cypress em modo interativo
+- `npm run cypress:run` - Executa testes em modo headless
+- `npm run test:e2e` - Alias para cypress:run
+
+## 🔧 Funcionalidades Técnicas
+
+- Arrow functions em todos os componentes
+- Uso de `useCallback` e `useMemo` para otimização
+- Validação de CNPJ com algoritmo de dígitos verificadores
+- Formatação automática de CNPJ e CEP
+- Busca automática de endereço via ViaCEP
+- Busca de dados da empresa via API de CNPJ
+
+## 📄 Licença
+
+Este projeto foi desenvolvido por Camila para um teste.
