@@ -38,6 +38,8 @@ npm install
 
 Crie um arquivo `.env.local` na raiz do projeto e copie as variáves de ambiente do arquivo `.env.example`.
 
+Cole o seu token na variável `NEXT_PUBLIC_API_TOKEN`.
+
 ## 🏃 Como Rodar
 
 ### Modo Desenvolvimento
@@ -124,8 +126,10 @@ gestor-empresas/
 │   │   ├── cadastro.tsx  # Formulário de cadastro
 │   │   ├── _app.tsx      # Configuração do app
 │   │   └── _document.tsx # Documento HTML
-│   └── types/            # Definições de tipos TypeScript
-│       └── company.ts
+│   ├── types/            # Definições de tipos TypeScript
+│   │   └── company.ts
+│   └── utils/            # Funções utilitárias
+│       └── formatters.ts # Formatadores de CNPJ e CEP
 ├── cypress/              # Testes E2E
 │   ├── e2e/              # Arquivos de teste
 │   ├── fixtures/         # Dados de teste
@@ -166,4 +170,4 @@ gestor-empresas/
 
 ## 📄 Licença
 
-Este projeto foi desenvolvido por Camila para um teste.
+Este projeto foi desenvolvido por Camila para o teste da empresa Arkmeds.
