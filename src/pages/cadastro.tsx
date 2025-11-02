@@ -315,19 +315,15 @@ const CadastroEmpresaPage = () => {
         complemento: values.complemento || undefined,
       };
 
-      console.log("Enviando payload:", payload);
-
-      fetch(
-        "https://n8ndev.arkmeds.xyz/webhook/14686c31-d3ab-4356-9c90-9fbd2feff9f1/companies",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      )
+      const webhookUrl = process.env.NEXT_PUBLIC_COMPANIES_API_URL || "";
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
+        body: JSON.stringify(payload),
+      })
         .then(async (res) => {
           if (!res.ok) {
             const text = await res.text().catch(() => "");
@@ -372,11 +368,12 @@ const CadastroEmpresaPage = () => {
 
     setLookupLoading(true);
     try {
+      const apiKey = process.env.NEXT_PUBLIC_CNPJ_API_KEY || "";
       const res = await fetch("https://api.arkmeds.com/cnpj", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": "nWCamsFISv84YLTZWPEN61sGyhDnSsqF3eIny8IA",
+          "x-api-key": apiKey,
         },
         body: JSON.stringify({ cnpj: onlyDigits(values.cnpj) }),
       });

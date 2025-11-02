@@ -19,7 +19,10 @@ const Home = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
 
-  const API_URL = useMemo(() => process.env.NEXT_PUBLIC_API_URL || "", []);
+  const API_URL = useMemo(
+    () => process.env.NEXT_PUBLIC_COMPANIES_API_URL || "",
+    []
+  );
   const TOKEN = useMemo(() => process.env.NEXT_PUBLIC_API_TOKEN || "", []);
 
   const fetchCompanies = useCallback(async () => {

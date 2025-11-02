@@ -20,16 +20,15 @@ interface RendimentoModalProps {
   onClose: () => void;
 }
 
-const RendimentoModal = ({
-  open,
-  empresa,
-  onClose,
-}: RendimentoModalProps) => {
+const RendimentoModal = ({ open, empresa, onClose }: RendimentoModalProps) => {
   const [rendimento, setRendimento] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = useMemo(() => process.env.NEXT_PUBLIC_API_URL || "", []);
+  const API_URL = useMemo(
+    () => process.env.NEXT_PUBLIC_COMPANIES_API_URL || "",
+    []
+  );
   const TOKEN = useMemo(() => process.env.NEXT_PUBLIC_API_TOKEN || "", []);
 
   const fetchRendimento = useCallback(async () => {
