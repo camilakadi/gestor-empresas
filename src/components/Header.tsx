@@ -2,6 +2,7 @@
 
 import { AppBar, Box, Toolbar } from "@mui/material";
 import Image from "next/image";
+import Link from "next/link";
 
 const Header = () => {
   return (
@@ -13,10 +14,13 @@ const Header = () => {
     >
       <Toolbar>
         <Box
+          component={Link}
+          href="/"
           sx={{
             padding: "5px",
             height: "75px",
             backgroundColor: "white",
+            cursor: "pointer",
           }}
         >
           <Image
