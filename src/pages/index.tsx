@@ -38,7 +38,26 @@ const Home = () => {
       }
 
       const data = await response.json();
-      setEmpresas(data);
+
+      // Notas para os avaliadores:
+      // Precisei fazer um map, pois as propriedades estão retornando diferente na listagem da API.
+      const mappedData: Empresa[] = Array.isArray(data)
+        ? data.map((item: Record<string, unknown>) => ({
+            razao_social:
+              (item.razao_social as string | undefined) ||
+              (item.razaoSocial as string | undefined) ||
+              "",
+            nome_fantasia:
+              (item.nome_fantasia as string | undefined) ||
+              (item.nomeFantasia as string | undefined) ||
+              "",
+            estado: (item.estado as string | undefined) || "",
+            municipio: (item.municipio as string | undefined) || "",
+            cnpj: (item.cnpj as string | undefined) || "",
+          }))
+        : [];
+
+      setEmpresas(mappedData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
